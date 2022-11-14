@@ -1,0 +1,31 @@
+name: Build
+on: [ push, pull_request, workflow_dispatch ]
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        ruby: [ '2.7', '3.0', '3.1' ]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+
+      - name: Run checks
+        run: bundle exec rake
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        with:
+          name: RSpec Tests
+          path: artifacts/*.xml
+          reporter: java-junit
