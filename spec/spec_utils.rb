@@ -12,9 +12,9 @@ module SpecUtils
     end
   end
 
-  def with_secret(secret_name, value, &block)
+  def with_secret(secret_name, value, secrets_dir = nil, &block)
     rollback_environment do
-      filepath = File.join(SPEC_SECRETS_PATH, secret_name)
+      filepath = File.join(secrets_dir || SPEC_SECRETS_PATH, secret_name)
       FileUtils.mkdir_p(File.dirname(filepath))
       File.open(filepath, 'w+') { |fh| fh.puts value }
 
