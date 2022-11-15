@@ -3,12 +3,12 @@ require 'fileutils'
 
 module SpecUtils
   def rollback_environment(&block)
-    old_envvars = ENV.keys
-
-    begin
-      yield
-    ensure
-      ENV.select! { |k, _| old_envvars.include? k }
+    ENV.to_h.tap do |old_env|
+      begin
+        yield
+      ensure
+        ENV.replace(old_env)
+      end
     end
   end
 
