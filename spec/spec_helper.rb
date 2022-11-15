@@ -1,7 +1,9 @@
 require_relative './spec_utils.rb'
+require 'tmpdir'
 
-# Avoid issues with `/run` being read-only on MacOS
-SPEC_SECRETS_PATH = ENV['UCBLIB_SECRETS_PATH'] = '/tmp/secrets'
+# Avoid issues with `/run` being read-only on MacOS. Also ensures that
+# tests always start with a clean secrets directory.
+SPEC_SECRETS_PATH = ENV['UCBLIB_SECRETS_PATH'] = Dir.mktmpdir
 
 RSpec.configure do |config|
   config.include SpecUtils

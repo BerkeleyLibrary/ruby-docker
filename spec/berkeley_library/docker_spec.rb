@@ -1,6 +1,6 @@
+require 'spec_helper'
 require 'rails' # require Rails first to mimic load order
 require 'berkeley_library/docker'
-require 'spec_helper'
 
 module BerkeleyLibrary
   describe Docker do
