@@ -3,7 +3,7 @@ require 'tmpdir'
 
 # Avoid issues with `/run` being read-only on MacOS. Also ensures that
 # tests always start with a clean secrets directory.
-SPEC_SECRETS_PATH = ENV['UCBLIB_SECRETS_PATH'] = Dir.mktmpdir
+SPEC_SECRETS_PATH = ENV['UCBLIB_SECRETS_PATTERN'] = Dir.mktmpdir
 
 RSpec.configure do |config|
   config.include SpecUtils

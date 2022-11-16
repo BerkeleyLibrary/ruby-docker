@@ -35,13 +35,13 @@ module BerkeleyLibrary
         expect { Secret.load_secrets! }.not_to change { ENV }
       end
 
-      it 'searches ENV["UCBLIB_SECRETS_PATH"] by default' do
+      it 'searches ENV["UCBLIB_SECRETS_PATTERN"] by default' do
         secrets_subdir = File.join(SPEC_SECRETS_PATH, 'super-secrets')
 
         with_secret('MASTER_KEY', 'd33db55f', secrets_subdir) do
           expect { Secret.load_secrets! }.not_to change { ENV }
 
-          ENV['UCBLIB_SECRETS_PATH'] = secrets_subdir
+          ENV['UCBLIB_SECRETS_PATTERN'] = secrets_subdir
 
           expect { Secret.load_secrets! }
             .to change { ENV['MASTER_KEY'] }
