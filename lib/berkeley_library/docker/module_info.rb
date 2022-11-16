@@ -7,7 +7,7 @@ module BerkeleyLibrary
       SUMMARY = 'Utility functions for Dockerizing Ruby apps'.freeze
       DESCRIPTION = 'Utility functions for making Ruby apps "just work" in Docker containers.'.freeze
       LICENSE = 'MIT'.freeze
-      VERSION = '0.1.1'.freeze
+      VERSION = '0.2.0-rc1'.freeze
       HOMEPAGE = 'https://github.com/BerkeleyLibrary/docker'.freeze
 
       private_class_method :new

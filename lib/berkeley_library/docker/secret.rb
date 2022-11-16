@@ -1,4 +1,6 @@
 require 'berkeley_library/docker/logging'
+require 'digest'
+require 'time'
 
 module BerkeleyLibrary
   module Docker
@@ -6,31 +8,52 @@ module BerkeleyLibrary
       class << self
         include Logging
 
-        PATH_OVERRIDE_ENVVAR = 'UCBLIB_SECRETS_PATH'
-        DEFAULT_SECRETS_PATH = '/run/secrets'
+        PATH_OVERRIDE_ENVVAR = 'UCBLIB_SECRETS_PATTERN'
+        DEFAULT_SECRETS_PATTERN = '/run/secrets/*'
 
-        def load_secrets!(glob = nil)
-          files_from(glob).each(&method(:load_secret!))
+        def load_secrets!(glob = nil, reload = false)
+          glob = normalize_glob(glob)
+
+          secrets.merge!(
+            files_from(glob).each_with_object({}) do |path, new_secrets|
+              secret_name = File.basename(path)
+              secret_value = File.read(path).strip
+
+              ENV[secret_name] = secret_value
+
+              new_secrets[secret_name] = {
+                name: secret_name,
+                file: path,
+                checksum: "sha256:#{Digest::SHA256.hexdigest(secret_value)}",
+                glob: glob,
+                timestamp: Time.now.to_i,
+              }
+            end
+          )
+        end
+
+        def secrets
+          @secrets ||= {}
         end
 
         private
 
-        def load_secret!(filepath)
-          secret = File.basename(filepath)
-          ENV[secret] = File.read(filepath).strip
-          log_info "Loaded secret `ENV['#{secret}']` from #{filepath}"
+        def files_from(glob)
+          Dir[glob].filter_map { |fname| fname if File.file? fname }
         end
 
-        def files_from(glob = nil)
-          glob ||= ENV[PATH_OVERRIDE_ENVVAR] || DEFAULT_SECRETS_PATH
-          glob = glob.strip
+        def normalize_glob(glob)
+          (glob || ENV[PATH_OVERRIDE_ENVVAR] || DEFAULT_SECRETS_PATTERN)
+            .then(&:strip)
+            .then(&method(:ensure_dir_asterisk))
+        end
 
-          if File.directory?(glob) && !glob.end_with?('*')
-            glob = File.join(glob, '*')
+        def ensure_dir_asterisk(glob)
+          if !glob.end_with?('*') && File.directory?(glob)
+            File.join(glob, '*')
+          else
+            glob
           end
-
-          log_info "Searching '#{glob}' for secrets files"
-          Dir[glob].filter_map { |fname| fname if File.file? fname }
         end
       end
     end

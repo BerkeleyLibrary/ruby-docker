@@ -1,38 +1,36 @@
-require 'rails' # require Rails first to mimic load order
-require 'berkeley_library/docker/railtie'
 require 'spec_helper'
+require 'rails'
+require 'berkeley_library/docker/railtie'
+require 'logger'
 
 module BerkeleyLibrary
   module Docker
     describe Railtie do
-      class TestApp < Rails::Application; end
-
-      let(:app) { TestApp.create }
-      let(:initializers) { app.initializers.tsort_each.collect(&:name) }
-      let(:railtie_name) { BerkeleyLibrary::Docker::Railtie::NAME }
-
+      # @note Simply defining the app class causes railtie
+      # `before_configuration` blocks to run, and we only get to define one
+      # application, hence this one test needs to handle everything.
       it 'causes rails to load the environment' do
-        with_secret('API_TOKEN', 'd33db55f') do
-          # @todo There is a very odd RSpec bug that causes the change{}
-          # assertion to fail unless it's preceded by this nil assertion.
-          expect(true).to be true
+        with_secret('FOOBAR', 'BAZ') do
+          with_secret('CLIENT_KEY', 'd33db55f') do
+            logger = spy Logger.new(STDOUT)
 
-          expect { app.initialize! }
-            .to change { ENV['API_TOKEN'] }
-            .from(nil).to('d33db55f')
+            expect(ENV['CLIENT_KEY']).to be nil
+
+            # Use Class.new so that `logger` is within scope
+            @klass = Class.new(Rails::Application) do
+              Rails.logger = logger
+              config.client_key = ENV['CLIENT_KEY']
+            end
+
+            expect(ENV['CLIENT_KEY']).to eq 'd33db55f'
+
+            app = @klass.create
+            app.initialize!
+
+            expect(app.config.client_key).to eq 'd33db55f'
+            expect(logger).to have_received(:info).twice.with(/Loaded secret:.*/)
+          end
         end
-      end
-
-      it 'has the expected initializer name' do
-        expect(railtie_name).to eq 'berkeley_library-docker.load_secrets'
-      end
-
-      it 'loads after the logger and before configuration' do
-        railtie = initializers.find_index(railtie_name)
-        logger = initializers.find_index(:initialize_logger)
-        config = initializers.find_index(:load_config_initializers)
-
-        expect(railtie).to be_between(logger, config)
       end
     end
   end

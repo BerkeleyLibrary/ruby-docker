@@ -7,14 +7,20 @@ require 'berkeley_library/docker'
 BerkeleyLibrary::Docker::Secret.load_secrets!
 ```
 
-Secrets are loaded from `/run/secrets` by default. You can override this by passing another path (or glob pattern) to the `load_secrets!` method, or by setting the `UCBLIB_SECRETS_PATH` environment variable. For example:
+---
+
+> **Note on (Rails) load order:** This gem loads the environment using Rails' `before_configuration` hook, a la the [dotenv](https://github.com/bkeepers/dotenv#note-on-load-order) gem. Manually call `BerkeleyLibrary::Docker::Secret.load_secrets!` if you need to load secrets earlier.
+
+---
+
+Secrets are loaded from `/run/secrets` by default. You can override this by passing another path (or glob pattern) to the `load_secrets!` method, or by setting the `UCBLIB_SECRETS_PATTERN` environment variable. For example:
 
 ```ruby
 # Load any file under /tmp/secrets
 BerkeleyLibrary::Docker::Secret.load_secrets! '/tmp/secrets/**/*'
 
 # Load only a specific file
-ENV['UCBLIB_SECRETS_PATH'] = '/run/secrets/DB_PASSWORD'
+ENV['UCBLIB_SECRETS_PATTERN'] = '/run/secrets/DB_PASSWORD'
 BerkeleyLibrary::Docker::Secret.load_secrets!
 ```
 
