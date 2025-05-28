@@ -14,7 +14,7 @@ module BerkeleyLibrary
 
       def init_cgroup_is_dockerish?
         begin
-          File.open('/proc/1/cgroup').read.match?(%r{(/docker|/lxc)})
+          File.open('/proc/1/cgroup').read.match?(%r{(/docker|/lxc|/kubepods)})
         rescue
           false
         end
