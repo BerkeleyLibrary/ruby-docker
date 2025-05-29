@@ -7,7 +7,7 @@ module BerkeleyLibrary
   module Docker
     class << self
       def running_in_container?
-        File.exist?('/.dockerenv') || init_cgroup_is_dockerish?
+        File.exist?('/.dockerenv') || init_cgroup_is_dockerish? || env_is_podmanish?
       end
 
       private
@@ -18,6 +18,10 @@ module BerkeleyLibrary
         rescue
           false
         end
+      end
+
+      def env_is_podmanish?
+        ENV.fetch('container', '') == 'podman'
       end
     end
   end

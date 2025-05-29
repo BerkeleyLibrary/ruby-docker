@@ -35,18 +35,21 @@ module BerkeleyLibrary
 
       it 'is true when /.dockerenv exists' do
         mock_dockerenv
+        mock_podman_env(false)
         expect(BerkeleyLibrary::Docker.running_in_container?).to be true
       end
 
       it 'is true when /proc/1/cgroup is docker-like' do
         mock_dockerenv(false)
         mock_init_cgroup
+        mock_podman_env(false)
         expect(BerkeleyLibrary::Docker.running_in_container?).to be true
       end
 
       it 'is false when /proc/1/cgroup is traditional' do
         mock_dockerenv(false)
         mock_init_cgroup(false)
+        mock_podman_env(false)
         expect(BerkeleyLibrary::Docker.running_in_container?).to be false
       end
 
@@ -55,6 +58,21 @@ module BerkeleyLibrary
         expect(File)
           .to receive(:open).with('/proc/1/cgroup')
           .and_raise(Errno::ENOENT)
+        mock_podman_env(false)
+        expect(BerkeleyLibrary::Docker.running_in_container?).to be false
+      end
+
+      it 'is true when container=podman is present in environment' do
+        mock_dockerenv(false)
+        mock_init_cgroup(false)
+        mock_podman_env(true)
+        expect(BerkeleyLibrary::Docker.running_in_container?).to be true
+      end
+
+      it 'is false when container=podman is not present in environment' do
+        mock_dockerenv(false)
+        mock_init_cgroup(false)
+        mock_podman_env(false)
         expect(BerkeleyLibrary::Docker.running_in_container?).to be false
       end
 
@@ -71,6 +89,12 @@ module BerkeleyLibrary
           .to receive(:open).with('/proc/1/cgroup')
           .and_return(
             StringIO.new(dockerish ? DOCKERISH_CGROUP : TRADITIONAL_CGROUP))
+      end
+
+      def mock_podman_env(exists = true)
+        allow(ENV)
+          .to receive(:fetch).with('container', '')
+          .and_return(exists ? 'podman' : '')
       end
     end
   end
