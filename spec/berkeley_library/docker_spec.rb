@@ -33,20 +33,30 @@ module BerkeleyLibrary
         1:name=systemd:/
       EOL
 
+      CGROUPS = {
+        trad: TRADITIONAL_CGROUP,
+        docker: DOCKERISH_CGROUP
+      }
+
       it 'is true when /.dockerenv exists' do
         mock_dockerenv
         expect(BerkeleyLibrary::Docker.running_in_container?).to be true
       end
 
+      it 'is true when KUBERNETES_SERVICE_HOST is set' do
+        mock_k8s_svc_host
+        expect(BerkeleyLibrary::Docker.running_in_container?).to be true
+      end
+
       it 'is true when /proc/1/cgroup is docker-like' do
         mock_dockerenv(false)
-        mock_init_cgroup
+        mock_init_cgroup(:docker)
         expect(BerkeleyLibrary::Docker.running_in_container?).to be true
       end
 
       it 'is false when /proc/1/cgroup is traditional' do
         mock_dockerenv(false)
-        mock_init_cgroup(false)
+        mock_init_cgroup(:trad)
         expect(BerkeleyLibrary::Docker.running_in_container?).to be false
       end
 
@@ -60,17 +70,21 @@ module BerkeleyLibrary
 
       private
 
+      def mock_k8s_svc_host(set = true)
+        expect(ENV).to receive(:key?).with('KUBERNETES_SERVICE_HOST').and_return(set)
+      end
+
       def mock_dockerenv(exists = true)
         expect(File)
           .to receive(:exist?).with('/.dockerenv')
           .and_return(exists)
       end
 
-      def mock_init_cgroup(dockerish = true)
+      def mock_init_cgroup(type)
+        cgroup_data = CGROUPS.fetch(type)
         expect(File)
           .to receive(:open).with('/proc/1/cgroup')
-          .and_return(
-            StringIO.new(dockerish ? DOCKERISH_CGROUP : TRADITIONAL_CGROUP))
+          .and_return(StringIO.new(cgroup_data))
       end
     end
   end
