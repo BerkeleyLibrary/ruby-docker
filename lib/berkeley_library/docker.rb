@@ -7,17 +7,21 @@ module BerkeleyLibrary
   module Docker
     class << self
       def running_in_container?
-        File.exist?('/.dockerenv') || init_cgroup_is_dockerish?
+        File.exist?('/.dockerenv') || init_cgroup_is_dockerish? || env_is_k8sish?
       end
 
       private
 
       def init_cgroup_is_dockerish?
         begin
-          File.open('/proc/1/cgroup').read.match?(%r{(/docker|/lxc|/kubepods)})
+          File.open('/proc/1/cgroup').read.match?(%r{(/docker|/lxc)})
         rescue
           false
         end
+      end
+
+      def env_is_k8sish?
+        ENV.key?('KUBERNETES_SERVICE_HOST')
       end
     end
   end

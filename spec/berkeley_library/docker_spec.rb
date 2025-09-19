@@ -19,20 +19,6 @@ module BerkeleyLibrary
         1:name=systemd:/docker/12345
       EOL
 
-      KUBEISH_CGROUP = <<~EOL
-        11:perf_event:/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod9a_bc_de_f0_12.slice/cri-containerd-12345.scope
-        10:hugetlb:/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod9a_bc_de_f0_12.slice/cri-containerd-12345.scope
-        9:devices:/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod9a_bc_de_f0_12.slice/cri-containerd-12345.scope
-        8:net_cls,net_prio:/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod9a_bc_de_f0_12.slice/cri-containerd-12345.scope
-        7:blkio:/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod9a_bc_de_f0_12.slice/cri-containerd-12345.scope
-        6:cpu,cpuacct:/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod9a_bc_de_f0_12.slice/cri-containerd-12345.scope
-        5:pids:/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod9a_bc_de_f0_12.slice/cri-containerd-12345.scope
-        4:cpuset:/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod9a_bc_de_f0_12.slice/cri-containerd-12345.scope
-        3:freezer:/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod9a_bc_de_f0_12.slice/cri-containerd-12345.scope
-        2:memory:/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod9a_bc_de_f0_12.slice/cri-containerd-12345.scope
-        1:name=systemd:/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod9a_bc_de_f0_12.slice/cri-containerd-12345.scope
-      EOL
-
       TRADITIONAL_CGROUP = <<~EOL
         11:cpuacct,cpu:/
         10:devices:/
@@ -49,7 +35,6 @@ module BerkeleyLibrary
 
       CGROUPS = {
         trad: TRADITIONAL_CGROUP,
-        kube: KUBEISH_CGROUP,
         docker: DOCKERISH_CGROUP
       }
 
@@ -58,15 +43,14 @@ module BerkeleyLibrary
         expect(BerkeleyLibrary::Docker.running_in_container?).to be true
       end
 
-      it 'is true when /proc/1/cgroup is docker-like' do
-        mock_dockerenv(false)
-        mock_init_cgroup(:docker)
+      it 'is true when KUBERNETES_SERVICE_HOST is set' do
+        mock_k8s_svc_host
         expect(BerkeleyLibrary::Docker.running_in_container?).to be true
       end
 
-      it 'is true when /proc/1/cgroup is kube-like' do
+      it 'is true when /proc/1/cgroup is docker-like' do
         mock_dockerenv(false)
-        mock_init_cgroup(:kube)
+        mock_init_cgroup(:docker)
         expect(BerkeleyLibrary::Docker.running_in_container?).to be true
       end
 
@@ -85,6 +69,10 @@ module BerkeleyLibrary
       end
 
       private
+
+      def mock_k8s_svc_host(set = true)
+        expect(ENV).to receive(:key?).with('KUBERNETES_SERVICE_HOST').and_return(set)
+      end
 
       def mock_dockerenv(exists = true)
         expect(File)
